@@ -17,9 +17,6 @@ const App: React.FC = () => {
     sensitivity: 85
   });
   
-  // Track if this specific device has already triggered for the current run
-  const [hasTriggered, setHasTriggered] = useState(false);
-
   // Debugging
   const [logs, setLogs] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useState(false);
@@ -60,19 +57,10 @@ const App: React.FC = () => {
   }, [connectedPeers]);
 
   const handleTriggerInternal = useCallback(() => {
-    addLog(`Trigger Internal Called. State: ${appState}, IsHost: ${isHost}, Locked: ${hasTriggered}`);
-    
-    // Prevent duplicate triggers from the same device in a single run
-    if (hasTriggered) {
-        addLog("Trigger ignored: Device already triggered this run.");
-        return;
-    }
+    addLog(`Trigger Internal Called. State: ${appState}, IsHost: ${isHost}`);
     
     if (appState === AppState.ARMED) {
       addLog("System ARMED -> STARTING");
-      
-      // Lock this device immediately
-      setHasTriggered(true);
       
       const startTime = Date.now();
       start(startTime);
@@ -93,9 +81,6 @@ const App: React.FC = () => {
       
       // Sync splits explicitly if we got a new one
       if (newSplit) {
-           // Lock this device immediately on successful split
-           setHasTriggered(true);
-           
            addLog(`Split Recorded: ${newSplit.time}ms. ID: ${newSplit.id}`);
            if (isHost) {
                 const payload: TimerStatePayload = {
@@ -113,7 +98,7 @@ const App: React.FC = () => {
     } else {
         addLog("Trigger ignored (State not ARMED or RUNNING)");
     }
-  }, [appState, start, recordSplit, isHost, broadcast, elapsed, splits, addLog, hasTriggered]);
+  }, [appState, start, recordSplit, isHost, broadcast, elapsed, splits, addLog]);
 
   // --- PeerJS Handlers ---
 
@@ -141,30 +126,18 @@ const App: React.FC = () => {
           // HOST LOGIC
           if (msg.type === 'TRIGGER') {
               addLog(`Received TRIGGER from ${sender.peer}`);
-              // Note: Remote triggers do not check local 'hasTriggered' state, 
-              // as that state is for the local camera only.
-              // Logic needs to handle if that specific peer triggered?
-              // For now, we trust the client decided to send TRIGGER.
               handleTriggerInternal(); 
           }
       } else {
           // CLIENT LOGIC
           if (msg.type === 'STATE_SYNC') {
               const payload = msg.payload as TimerStatePayload;
-              // Reset local trigger lock if system is resetting
-              if (payload.state === AppState.IDLE || payload.state === AppState.ARMED) {
-                  if (hasTriggered) {
-                      addLog("State Sync: Resetting local trigger lock");
-                      setHasTriggered(false);
-                  }
-              }
-
               setAppState(payload.state);
               const isRunning = payload.state === AppState.RUNNING;
               syncState(payload.elapsedOffset || 0, payload.splits, isRunning);
           }
       }
-  }, [isHost, handleTriggerInternal, syncState, addLog, hasTriggered]);
+  }, [isHost, handleTriggerInternal, syncState, addLog]);
 
   const handleNewConnection = useCallback((conn: DataConnection) => {
       addLog(`New Connection: ${conn.peer}`);
@@ -275,12 +248,6 @@ const App: React.FC = () => {
   // --- UI Handlers ---
 
   const handleTrigger = useCallback(() => {
-    // If locked locally, don't even process wrapper (though handleTriggerInternal checks it too)
-    if (hasTriggered) {
-        addLog("Local Trigger blocked: Already triggered");
-        return;
-    }
-
     addLog("Handle Trigger Wrapper Called");
     if (isHost || connectedPeers.length === 0) {
         // Local Trigger (Host or Standalone)
@@ -288,21 +255,18 @@ const App: React.FC = () => {
     } else {
         // Client Trigger
         if (connectedPeers[0]?.open) {
-            // Optimistically lock client to prevent multi-send
-            setHasTriggered(true);
             addLog("Sending TRIGGER to Host");
             connectedPeers[0].send({ type: 'TRIGGER' });
         } else {
             addLog("Cannot send trigger: Host disconnected");
         }
     }
-  }, [isHost, connectedPeers, handleTriggerInternal, addLog, hasTriggered]);
+  }, [isHost, connectedPeers, handleTriggerInternal, addLog]);
 
   const handleArm = () => {
     addLog("Manual Arm -> Broadcasting");
     reset(); 
     setAppState(AppState.ARMED);
-    setHasTriggered(false); // Reset lock for new run
     
     if (isHost) {
         broadcast({ 
@@ -322,7 +286,6 @@ const App: React.FC = () => {
     stop();
     setAppState(AppState.IDLE);
     reset();
-    setHasTriggered(false); // Reset lock
     
     if (isHost) {
         broadcast({ 
@@ -361,7 +324,7 @@ const App: React.FC = () => {
                  >
                      {showDebug ? 'HIDE LOGS' : 'DEBUG'}
                  </button>
-                 <div className="text-xs font-mono text-gray-600">SYS.VER.1.8</div>
+                 <div className="text-xs font-mono text-gray-600">SYS.VER.1.9</div>
              </div>
              <div className="flex items-center gap-2">
                  <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : (connectionStatus === 'waiting' ? 'bg-amber-500 animate-pulse' : 'bg-gray-600')}`}></div>
