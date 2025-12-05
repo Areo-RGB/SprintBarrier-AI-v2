@@ -1,0 +1,7 @@
+{
+  "name": "SprintBarrier AI",
+  "description": "Optical tripwire sprint timer using computer vision to detect motion crossing a virtual barrier.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
