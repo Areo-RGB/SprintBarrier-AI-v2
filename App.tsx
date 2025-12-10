@@ -6,7 +6,7 @@ import { ConnectionPanel, ConnectionStatus } from './components/ConnectionPanel'
 import { SplitsList } from './components/SplitsList';
 import { DebugConsole } from './components/DebugConsole';
 import { useStopwatch } from './hooks/useStopwatch';
-import { AppState, DetectionSettings, PeerMessage, TimerStatePayload } from './types';
+import { AppState, DetectionSettings, PeerMessage, TimerStatePayload, ConnectedDevice } from './types';
 import { Peer, DataConnection } from 'peerjs';
 
 const PEER_PREFIX = 'sb-sprint-v1-';
@@ -39,10 +39,15 @@ const App: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [isHost, setIsHost] = useState(false);
   const [connectedPeers, setConnectedPeers] = useState<DataConnection[]>([]);
-  const [connectedDeviceNames, setConnectedDeviceNames] = useState<string[]>([]);
+  
+  // Rich device info state for UI
+  const [connectedDevices, setConnectedDevices] = useState<ConnectedDevice[]>([]);
   
   const peerRef = useRef<Peer | null>(null);
-  const peerNameMap = useRef<Map<string, string>>(new Map());
+
+  // Calibration Refs
+  const calibrationSamplesRef = useRef<Map<string, number[]>>(new Map());
+  const calibrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs for event handlers to avoid stale closures in PeerJS callbacks
   const handlePeerMessageRef = useRef<(msg: PeerMessage, sender: DataConnection) => void>(() => {});
@@ -56,20 +61,33 @@ const App: React.FC = () => {
     });
   }, [connectedPeers]);
 
-  const handleTriggerInternal = useCallback(() => {
-    addLog(`Trigger Internal Called. State: ${appState}, IsHost: ${isHost}`);
+  const handleTriggerInternal = useCallback((senderPeerId?: string) => {
+    addLog(`Trigger Internal Called. State: ${appState}, IsHost: ${isHost}, Sender: ${senderPeerId || 'Local'}`);
     
+    // Calculate network compensation if remote trigger
+    let compensationMs = 0;
+    if (senderPeerId && isHost) {
+        const device = connectedDevices.find(d => d.peerId === senderPeerId);
+        if (device && device.avgLatency > 0) {
+            compensationMs = Math.floor(device.avgLatency / 2);
+            addLog(`Applying latency compensation: -${compensationMs}ms (Avg RTT: ${device.avgLatency}ms)`);
+        }
+    }
+
+    const now = Date.now();
+    // The event effectively happened 'compensationMs' ago
+    const effectiveTime = now - compensationMs;
+
     if (appState === AppState.ARMED) {
       addLog("System ARMED -> STARTING");
       
-      const startTime = Date.now();
-      start(startTime);
+      start(effectiveTime);
       setAppState(AppState.RUNNING);
       
       if (isHost) {
           const payload: TimerStatePayload = {
               state: AppState.RUNNING,
-              startTime: startTime,
+              startTime: effectiveTime,
               splits: [],
           };
           broadcast({ type: 'STATE_SYNC', payload });
@@ -77,7 +95,43 @@ const App: React.FC = () => {
     } else if (appState === AppState.RUNNING) {
       addLog(`System RUNNING. Attempting split. Current splits: ${splits.length}`);
       
-      const newSplit = recordSplit();
+      // Calculate remote elapsed time based on the effective timestamp
+      // recordSplit(remoteElapsedTime) expects the total elapsed time of the event
+      // We need to calculate what the timer WAS at effectiveTime.
+      // However, useStopwatch relies on startTimeRef.
+      // Since startTimeRef is local, we can just pass (effectiveTime - startTime) as elapsed?
+      // useStopwatch.recordSplit handles this if we pass the timestamp? 
+      // Actually recordSplit accepts 'remoteElapsedTime'.
+      
+      // We need to fetch the current startTime to calc diff
+      // But we can't access startTimeRef directly here easily without exposing it.
+      // Alternative: Pass effectiveTime to recordSplit if we refactor recordSplit?
+      // Current recordSplit signature: recordSplit(remoteElapsedTime?: number)
+      // remoteElapsedTime = effectiveTime - startTime.
+      // We need to track startTime in App or trust useStopwatch to handle logic if we pass 'now' - compensation?
+      // The simplest way: useStopwatch calculates elapsed based on Date.now().
+      // If we pass an explicit "elapsed time", it uses it.
+      
+      // Let's rely on the stopwatch hook's internal startTime tracking for calculating `elapsed`.
+      // We need to know the start time to calculate the offset elapsed time.
+      // Since `elapsed` state in App is updated via rAF, it might be slightly off "real" Date.now().
+      // Ideally recordSplit should accept an absolute timestamp, but it takes elapsed.
+      // We can approximate:
+      const estimatedElapsed = effectiveTime - (Date.now() - elapsed);
+      // Wait, 'elapsed' is purely display state. We need the real start time.
+      // Let's just pass nothing to recordSplit if local, but we need compensation.
+      // Let's modify recordSplit to just take the compensated elapsed time.
+      // Better yet, let's look at useStopwatch:
+      // const currentElapsed = remoteElapsedTime ?? (startTimeRef.current ? Date.now() - startTimeRef.current : 0);
+      
+      // We can calculate the correct elapsed time here:
+      // We know `elapsed` (from hook) ~= Date.now() - startTime. 
+      // So startTime ~= Date.now() - elapsed.
+      // So `compensatedElapsed` = effectiveTime - (Date.now() - elapsed) = (now - comp) - (now - elapsed) = elapsed - comp.
+      
+      const compensatedElapsed = Math.max(0, elapsed - compensationMs);
+      
+      const newSplit = recordSplit(compensatedElapsed);
       
       // Sync splits explicitly if we got a new one
       if (newSplit) {
@@ -85,7 +139,7 @@ const App: React.FC = () => {
            if (isHost) {
                 const payload: TimerStatePayload = {
                     state: AppState.RUNNING,
-                    startTime: Date.now() - (elapsed || 0), 
+                    startTime: Date.now() - elapsed, // Maintain original anchor
                     splits: [...splits, newSplit],
                     elapsedOffset: elapsed
                 };
@@ -96,9 +150,9 @@ const App: React.FC = () => {
           addLog("Split ignored (Debounce or error)");
       }
     } else {
-        addLog("Trigger ignored (State not ARMED or RUNNING)");
+        addLog(`Trigger ignored (State: ${appState})`);
     }
-  }, [appState, start, recordSplit, isHost, broadcast, elapsed, splits, addLog]);
+  }, [appState, start, recordSplit, isHost, broadcast, elapsed, splits, addLog, connectedDevices]);
 
   // --- PeerJS Handlers ---
 
@@ -114,11 +168,46 @@ const App: React.FC = () => {
   }, [appState, elapsed, splits, addLog]);
 
   const handlePeerMessage = useCallback((msg: PeerMessage, sender: DataConnection) => {
+      // Handshake / Identification
       if (msg.type === 'HELLO') {
           const name = msg.payload?.name || 'Unknown Device';
           addLog(`Device Hello: ${name} (${sender.peer})`);
-          peerNameMap.current.set(sender.peer, name);
-          setConnectedDeviceNames(Array.from(peerNameMap.current.values()));
+          
+          if (isHost) {
+              setConnectedDevices(prev => {
+                  const exists = prev.find(d => d.peerId === sender.peer);
+                  if (exists) {
+                      return prev.map(d => d.peerId === sender.peer ? { ...d, name } : d);
+                  }
+                  return [...prev, { peerId: sender.peer, name, latency: -1, avgLatency: 0 }];
+              });
+          }
+          return;
+      }
+
+      // Latency Checks
+      if (msg.type === 'PING') {
+          // Client: Reply to PING
+          sender.send({ type: 'PONG', payload: msg.payload });
+          return;
+      }
+
+      if (msg.type === 'PONG') {
+          // Host: Calculate latency
+          if (isHost) {
+             const rtt = Date.now() - msg.payload.ts;
+             
+             // If calibrating, collect sample
+             if (appState === AppState.CALIBRATING) {
+                 const samples = calibrationSamplesRef.current.get(sender.peer) || [];
+                 samples.push(rtt);
+                 calibrationSamplesRef.current.set(sender.peer, samples);
+             }
+
+             setConnectedDevices(prev => prev.map(d => 
+                 d.peerId === sender.peer ? { ...d, latency: rtt } : d
+             ));
+          }
           return;
       }
 
@@ -126,7 +215,7 @@ const App: React.FC = () => {
           // HOST LOGIC
           if (msg.type === 'TRIGGER') {
               addLog(`Received TRIGGER from ${sender.peer}`);
-              handleTriggerInternal(); 
+              handleTriggerInternal(sender.peer); 
           }
       } else {
           // CLIENT LOGIC
@@ -137,10 +226,11 @@ const App: React.FC = () => {
               syncState(payload.elapsedOffset || 0, payload.splits, isRunning);
           }
       }
-  }, [isHost, handleTriggerInternal, syncState, addLog]);
+  }, [isHost, handleTriggerInternal, syncState, addLog, appState]);
 
   const handleNewConnection = useCallback((conn: DataConnection) => {
       addLog(`New Connection: ${conn.peer}`);
+      
       conn.on('open', () => {
         addLog(`Connection Open: ${conn.peer}`);
         setConnectedPeers(prev => [...prev, conn]);
@@ -150,6 +240,11 @@ const App: React.FC = () => {
 
         if (isHost) {
              sendStateToPeer(conn);
+             // Initialize in list (name will update on HELLO)
+             setConnectedDevices(prev => {
+                 if (prev.find(d => d.peerId === conn.peer)) return prev;
+                 return [...prev, { peerId: conn.peer, name: 'Connecting...', latency: -1, avgLatency: 0 }];
+             });
         }
       });
 
@@ -162,8 +257,8 @@ const App: React.FC = () => {
       conn.on('close', () => {
           addLog(`Connection Closed: ${conn.peer}`);
           setConnectedPeers(prev => prev.filter(p => p.peer !== conn.peer));
-          peerNameMap.current.delete(conn.peer);
-          setConnectedDeviceNames(Array.from(peerNameMap.current.values()));
+          // Remove from UI list
+          setConnectedDevices(prev => prev.filter(d => d.peerId !== conn.peer));
       });
 
       conn.on('error', (err) => {
@@ -177,14 +272,29 @@ const App: React.FC = () => {
     handleNewConnectionRef.current = handleNewConnection;
   }, [handlePeerMessage, handleNewConnection]);
 
+  // Ping Loop (Host Only)
+  useEffect(() => {
+    if (!isHost) return;
+    
+    // Different interval based on state
+    const intervalMs = appState === AppState.CALIBRATING ? 100 : 2000;
+    
+    const timer = setInterval(() => {
+       connectedPeers.forEach(p => {
+           if (p.open) p.send({ type: 'PING', payload: { ts: Date.now() }});
+       });
+    }, intervalMs);
+    
+    return () => clearInterval(timer);
+  }, [isHost, connectedPeers, appState]);
+
   // --- PeerJS Setup ---
 
   const startHosting = useCallback(() => {
     if (peerRef.current) peerRef.current.destroy();
     setConnectionStatus('connecting');
     setIsHost(true);
-    setConnectedDeviceNames([]);
-    peerNameMap.current.clear();
+    setConnectedDevices([]);
     addLog("Starting Host...");
 
     const tryRegisterHost = () => {
@@ -224,7 +334,7 @@ const App: React.FC = () => {
       if (peerRef.current) peerRef.current.destroy();
       setConnectionStatus('connecting');
       setIsHost(false);
-      setConnectedDeviceNames([]);
+      setConnectedDevices([]);
       addLog(`Joining session: ${code}`);
 
       const peer = new Peer(); 
@@ -264,25 +374,66 @@ const App: React.FC = () => {
   }, [isHost, connectedPeers, handleTriggerInternal, addLog]);
 
   const handleArm = () => {
-    addLog("Manual Arm -> Broadcasting");
+    addLog("Manual Arm -> Starting Calibration");
     reset(); 
-    setAppState(AppState.ARMED);
+    setAppState(AppState.CALIBRATING);
     
+    // Clear previous samples
+    calibrationSamplesRef.current.clear();
+
     if (isHost) {
+        // Broadcast CALIBRATING to peers (they can show a spinner or "Wait" state)
         broadcast({ 
             type: 'STATE_SYNC', 
             payload: { 
-                state: AppState.ARMED, 
+                state: AppState.CALIBRATING, 
                 startTime: null, 
                 splits: [], 
                 elapsedOffset: 0 
             } 
         });
+
+        // Set timeout to finish calibration
+        if (calibrationTimerRef.current) clearTimeout(calibrationTimerRef.current);
+        
+        calibrationTimerRef.current = setTimeout(() => {
+            addLog("Calibration Complete. Calculating Averages...");
+            
+            // Calculate averages
+            setConnectedDevices(prev => prev.map(device => {
+                const samples = calibrationSamplesRef.current.get(device.peerId) || [];
+                let avg = 0;
+                if (samples.length > 0) {
+                    const sum = samples.reduce((a, b) => a + b, 0);
+                    avg = Math.round(sum / samples.length);
+                }
+                addLog(`Device ${device.name}: ${samples.length} samples, Avg Latency: ${avg}ms`);
+                return { ...device, avgLatency: avg };
+            }));
+
+            // Transition to ARMED
+            setAppState(AppState.ARMED);
+            broadcast({ 
+                type: 'STATE_SYNC', 
+                payload: { 
+                    state: AppState.ARMED, 
+                    startTime: null, 
+                    splits: [], 
+                    elapsedOffset: 0 
+                } 
+            });
+        }, 3000);
+    } else {
+        // If not host (standalone mode), just wait 1s for effect then arm
+        setTimeout(() => {
+             setAppState(AppState.ARMED);
+        }, 1000);
     }
   };
 
   const handleReset = () => {
     addLog("Manual Reset -> Broadcasting");
+    if (calibrationTimerRef.current) clearTimeout(calibrationTimerRef.current);
     stop();
     setAppState(AppState.IDLE);
     reset();
@@ -324,7 +475,7 @@ const App: React.FC = () => {
                  >
                      {showDebug ? 'HIDE LOGS' : 'DEBUG'}
                  </button>
-                 <div className="text-xs font-mono text-gray-600">SYS.VER.1.9</div>
+                 <div className="text-xs font-mono text-gray-600">SYS.VER.2.1</div>
              </div>
              <div className="flex items-center gap-2">
                  <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : (connectionStatus === 'waiting' ? 'bg-amber-500 animate-pulse' : 'bg-gray-600')}`}></div>
@@ -366,7 +517,7 @@ const App: React.FC = () => {
                     hostCode={hostCode}
                     connectionStatus={connectionStatus}
                     isHost={isHost}
-                    connectedDevices={connectedDeviceNames}
+                    connectedDevices={connectedDevices}
                     onHost={startHosting}
                     onJoin={joinSession}
                 />

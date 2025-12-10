@@ -26,7 +26,7 @@ export const Controls: React.FC<ControlsProps> = ({
       <div className="flex justify-between items-center mb-2">
          <h2 className="text-gray-400 text-sm font-bold uppercase tracking-wider">Control Panel</h2>
          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${appState === AppState.ARMED ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${appState === AppState.ARMED ? 'bg-red-500 animate-pulse' : (appState === AppState.CALIBRATING ? 'bg-amber-400 animate-bounce' : 'bg-gray-600')}`}></div>
             <span className="text-xs text-gray-500">{appState}</span>
          </div>
       </div>
@@ -42,9 +42,13 @@ export const Controls: React.FC<ControlsProps> = ({
         ) : (
              <button
             onClick={onReset}
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-6 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-red-900/50"
+            disabled={appState === AppState.CALIBRATING}
+            className={`flex-1 font-bold py-4 px-6 rounded-xl transition-all transform active:scale-95 shadow-lg 
+                ${appState === AppState.CALIBRATING 
+                    ? 'bg-amber-600 text-white/80 cursor-wait' 
+                    : 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/50'}`}
           >
-            {appState === AppState.ARMED ? 'CANCEL' : 'RESET'}
+            {appState === AppState.CALIBRATING ? 'CALIBRATING...' : (appState === AppState.ARMED ? 'CANCEL' : 'RESET')}
           </button>
         )}
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ConnectedDevice } from '../types';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'waiting' | 'connected';
 
@@ -7,7 +8,7 @@ interface ConnectionPanelProps {
   hostCode: string | null;
   connectionStatus: ConnectionStatus;
   isHost: boolean;
-  connectedDevices: string[];
+  connectedDevices: ConnectedDevice[];
   onJoin: (code: string) => void;
   onHost: () => void;
 }
@@ -54,6 +55,38 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                 </span>
             )}
         </div>
+        
+        {/* Device List for Host */}
+        {isHost && connectedDevices.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-800 flex flex-col gap-2">
+                {connectedDevices.map(device => (
+                    <div key={device.peerId} className="flex flex-col gap-1 py-1 border-b border-gray-800/50 last:border-0">
+                        <div className="flex justify-between items-center text-xs font-mono">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                <span className="text-gray-300">{device.name}</span>
+                            </div>
+                            <div className={`
+                                px-1.5 py-0.5 rounded text-[10px] font-bold
+                                ${device.latency < 0 ? 'text-gray-600' : 
+                                  device.latency < 100 ? 'text-emerald-500 bg-emerald-500/10' : 
+                                  device.latency < 300 ? 'text-yellow-500 bg-yellow-500/10' : 'text-red-500 bg-red-500/10'}
+                            `}>
+                                {device.latency < 0 ? '...' : `${device.latency}ms`}
+                            </div>
+                        </div>
+                        {/* Avg Display */}
+                        {device.avgLatency > 0 && (
+                            <div className="flex justify-end items-center gap-2 text-[10px] text-gray-500 font-mono px-1">
+                                <span>Comp: -{Math.floor(device.avgLatency / 2)}ms</span>
+                                <span className="text-gray-600">|</span>
+                                <span>Avg: {device.avgLatency}ms</span>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        )}
       </div>
     );
   }
@@ -78,7 +111,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                      <div className="flex flex-wrap justify-center gap-2">
                          {connectedDevices.map((device, idx) => (
                              <span key={idx} className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 font-mono">
-                                 {device}
+                                 {device.name}
                              </span>
                          ))}
                      </div>
