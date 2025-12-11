@@ -466,10 +466,11 @@ const App: React.FC = () => {
             
             {/* 1. Video Feed */}
             <div className="shrink-0 min-h-[300px] relative rounded-2xl overflow-hidden border border-gray-800 bg-gray-900 shadow-xl">
-                 <BarrierCam 
-                    appState={appState} 
-                    onTrigger={handleTrigger} 
+                 <BarrierCam
+                    appState={appState}
+                    onTrigger={handleTrigger}
                     settings={settings}
+                    onSettingsChange={setSettings}
                     addLog={addLog}
                 />
             </div>
@@ -484,12 +485,10 @@ const App: React.FC = () => {
 
             {/* 4. Controls */}
             <div className="flex-shrink-0 flex flex-col gap-4">
-                <Controls 
-                    appState={appState} 
-                    onArm={handleArm} 
-                    onReset={handleReset} 
-                    settings={settings} 
-                    onSettingsChange={setSettings} 
+                <Controls
+                    appState={appState}
+                    onArm={handleArm}
+                    onReset={handleReset}
                 />
                 
                 <ConnectionPanel 
