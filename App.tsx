@@ -598,10 +598,10 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Layout - Mobile Optimized */}
-      <main className="flex-1 flex flex-col gap-3 h-full overflow-y-auto max-w-lg mx-auto w-full pb-6">
-        {/* 1. Video Feed */}
-        <div className="shrink-0 min-h-[200px] md:min-h-[240px] relative rounded-xl overflow-hidden border border-blue-800/40 bg-gray-900 shadow-2xl shadow-blue-950/50">
+      {/* Main Layout - 1/4 Video, 3/4 UI */}
+      <main className="flex flex-col h-screen max-w-lg mx-auto w-full pb-6">
+        {/* 1. Video Feed - 1/4 of screen height */}
+        <div className="h-[25vh] relative rounded-xl overflow-hidden border border-blue-800/40 bg-gray-900 shadow-2xl shadow-blue-950/50 mb-3 flex-shrink-0">
           <BarrierCam
             appState={appState}
             onTrigger={handleTrigger}
@@ -618,21 +618,24 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* 2. Timer Display */}
-        <div className="shrink-0 h-28 md:h-32">
-          <TimerDisplay elapsedMs={elapsed} state={appState} />
-        </div>
+        {/* 2. Rest of UI - remaining screen height */}
+        <div className="flex-1 flex flex-col gap-3 overflow-y-auto min-h-0">
+          {/* Timer Display */}
+          <div className="shrink-0">
+            <TimerDisplay elapsedMs={elapsed} state={appState} />
+          </div>
 
-        {/* 3. Splits List (Collapsible) */}
-        <SplitsList splits={splits} />
+          {/* Splits List (Collapsible) */}
+          <SplitsList splits={splits} />
 
-        {/* 4. Controls */}
-        <div className="flex-shrink-0 flex flex-col gap-3">
-          <Controls
-            appState={appState}
-            onArm={handleArm}
-            onReset={handleReset}
-          />
+          {/* Controls */}
+          <div className="flex-shrink-0 flex flex-col gap-3">
+            <Controls
+              appState={appState}
+              onArm={handleArm}
+              onReset={handleReset}
+            />
+          </div>
         </div>
       </main>
     </div>

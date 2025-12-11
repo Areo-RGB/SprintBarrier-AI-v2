@@ -428,8 +428,8 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
         autoPlay
         playsInline
         muted
-        className={`w-full h-full object-cover pointer-events-none transition-opacity duration-500 ${
-          isCameraEnabled ? "opacity-75" : "opacity-0"
+        className={`w-full h-full object-contain bg-black pointer-events-none transition-opacity duration-500 ${
+          isCameraEnabled ? "opacity-90" : "opacity-0"
         }`}
       />
 
