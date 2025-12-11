@@ -117,7 +117,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
         const hasTorch = !!capabilities.torch || ('torch' in capabilities);
 
         if (hasTorch) {
-            const turnOn = settings.torchEnabled && appState === AppState.ARMED;
+            const turnOn = settings.torchEnabled && (appState === AppState.CALIBRATING || appState === AppState.ARMED);
             try {
                 await track.applyConstraints({
                     // @ts-ignore

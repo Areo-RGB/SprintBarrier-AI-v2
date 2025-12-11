@@ -342,31 +342,31 @@ const App: React.FC = () => {
   }, [isHost, connectedPeers, handleTriggerInternal, addLog]);
 
   const handleArm = () => {
-    addLog("Manual Arm -> Starting Calibration");
-    reset(); 
+    addLog("Manual Arm -> Enabling torch and starting calibration");
+    reset();
     setAppState(AppState.CALIBRATING);
-    
+
     // Clear previous samples
     calibrationSamplesRef.current.clear();
 
     if (isHost) {
         // Broadcast CALIBRATING to peers (they can show a spinner or "Wait" state)
-        broadcast({ 
-            type: 'STATE_SYNC', 
-            payload: { 
-                state: AppState.CALIBRATING, 
-                startTime: null, 
-                splits: [], 
-                elapsedOffset: 0 
-            } 
+        broadcast({
+            type: 'STATE_SYNC',
+            payload: {
+                state: AppState.CALIBRATING,
+                startTime: null,
+                splits: [],
+                elapsedOffset: 0
+            }
         });
 
-        // Set timeout to finish calibration
+        // Set timeout to finish calibration (allow 500ms for torch to stabilize, then 3s calibration)
         if (calibrationTimerRef.current) clearTimeout(calibrationTimerRef.current);
-        
+
         calibrationTimerRef.current = setTimeout(() => {
             addLog("Calibration Complete. Calculating Averages...");
-            
+
             // Calculate averages
             setConnectedDevices(prev => prev.map(device => {
                 const samples = calibrationSamplesRef.current.get(device.peerId) || [];
@@ -381,21 +381,21 @@ const App: React.FC = () => {
 
             // Transition to ARMED
             setAppState(AppState.ARMED);
-            broadcast({ 
-                type: 'STATE_SYNC', 
-                payload: { 
-                    state: AppState.ARMED, 
-                    startTime: null, 
-                    splits: [], 
-                    elapsedOffset: 0 
-                } 
+            broadcast({
+                type: 'STATE_SYNC',
+                payload: {
+                    state: AppState.ARMED,
+                    startTime: null,
+                    splits: [],
+                    elapsedOffset: 0
+                }
             });
-        }, 3000);
+        }, 3500); // 500ms torch stabilization + 3000ms calibration
     } else {
-        // If not host (standalone mode), just wait 1s for effect then arm
+        // If not host (standalone mode), wait 500ms for torch stabilization then 1s for effect then arm
         setTimeout(() => {
              setAppState(AppState.ARMED);
-        }, 1000);
+        }, 1500); // 500ms torch + 1000ms wait
     }
   };
 
