@@ -49,15 +49,24 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
       if (!isCameraEnabled) return;
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 60 }
-          },
+        const constraints: MediaStreamConstraints = {
+          video: settings.cameraDeviceId
+            ? {
+                deviceId: { exact: settings.cameraDeviceId },
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 60 }
+              }
+            : {
+                facingMode: 'environment',
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 60 }
+              },
           audio: false,
-        });
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         currentStream = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -90,7 +99,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
             stream.getTracks().forEach(track => track.stop());
         }
     }
-  }, [isCameraEnabled]);
+  }, [isCameraEnabled, settings.cameraDeviceId]);
 
   // Torch Management
   useEffect(() => {

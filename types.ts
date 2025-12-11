@@ -9,6 +9,7 @@ export enum AppState {
 export interface DetectionSettings {
   sensitivity: number; // 1-100
   torchEnabled: boolean;
+  cameraDeviceId?: string; // Selected camera device ID
 }
 
 export interface Split {

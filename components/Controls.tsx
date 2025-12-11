@@ -9,17 +9,41 @@ interface ControlsProps {
   onSettingsChange: (settings: DetectionSettings) => void;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ 
-  appState, 
-  onArm, 
-  onReset, 
-  settings, 
-  onSettingsChange 
+export const Controls: React.FC<ControlsProps> = ({
+  appState,
+  onArm,
+  onReset,
+  settings,
+  onSettingsChange
 }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+
+  // Enumerate available cameras
+  React.useEffect(() => {
+    const getCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        setCameras(videoDevices);
+      } catch (err) {
+        console.error('Failed to enumerate cameras:', err);
+      }
+    };
+
+    getCameras();
+
+    // Listen for device changes
+    navigator.mediaDevices.addEventListener('devicechange', getCameras);
+    return () => navigator.mediaDevices.removeEventListener('devicechange', getCameras);
+  }, []);
+
   const handleSensitivityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSettingsChange({ ...settings, sensitivity: parseInt(e.target.value) });
+  };
+
+  const handleCameraChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onSettingsChange({ ...settings, cameraDeviceId: e.target.value });
   };
 
   return (
@@ -90,16 +114,39 @@ export const Controls: React.FC<ControlsProps> = ({
                         Adjust if lighting causes false starts.
                     </p>
                 </div>
-                
+
+                {cameras.length > 1 && (
+                    <div className="mb-4 border-t border-gray-700/50 pt-3">
+                        <div className="flex justify-between text-[10px] text-gray-400 mb-2">
+                            <span>CAMERA</span>
+                        </div>
+                        <select
+                            value={settings.cameraDeviceId || ''}
+                            onChange={handleCameraChange}
+                            className="w-full bg-gray-700 text-white text-xs rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                            <option value="">Default Camera</option>
+                            {cameras.map((camera, index) => (
+                                <option key={camera.deviceId} value={camera.deviceId}>
+                                    {camera.label || `Camera ${index + 1}`}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-[10px] text-gray-500 text-center mt-2">
+                            Select rear or front camera.
+                        </p>
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between border-t border-gray-700/50 pt-3">
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-300 font-bold">FLASHLIGHT</span>
                         <span className="text-[10px] text-gray-500">Enable torch when ARMED</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            className="sr-only peer" 
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
                             checked={settings.torchEnabled}
                             onChange={(e) => onSettingsChange({...settings, torchEnabled: e.target.checked})}
                         />

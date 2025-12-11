@@ -13,8 +13,12 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         VitePWA({
-          registerType: 'autoUpdate',
+          registerType: 'prompt',
           includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+          workbox: {
+            cleanupOutdatedCaches: true,
+            skipWaiting: false
+          },
           manifest: {
             name: 'SprintBarrier AI',
             short_name: 'SprintBarrier',

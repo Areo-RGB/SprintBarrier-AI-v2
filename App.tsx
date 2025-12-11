@@ -5,6 +5,7 @@ import { Controls } from './components/Controls';
 import { ConnectionPanel, ConnectionStatus } from './components/ConnectionPanel';
 import { SplitsList } from './components/SplitsList';
 import { DebugConsole } from './components/DebugConsole';
+import { PWAUpdateNotification } from './components/PWAUpdateNotification';
 import { useStopwatch } from './hooks/useStopwatch';
 import { AppState, DetectionSettings, PeerMessage, TimerStatePayload, ConnectedDevice } from './types';
 import { Peer, DataConnection } from 'peerjs';
@@ -420,10 +421,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-6 font-sans relative flex flex-col">
-      <DebugConsole 
-        logs={logs} 
-        isOpen={showDebug} 
-        onClose={() => setShowDebug(false)} 
+      <PWAUpdateNotification />
+
+      <DebugConsole
+        logs={logs}
+        isOpen={showDebug}
+        onClose={() => setShowDebug(false)}
         onClear={() => setLogs([])}
       />
       
