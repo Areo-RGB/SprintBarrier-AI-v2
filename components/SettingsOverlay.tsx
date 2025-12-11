@@ -99,10 +99,10 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             {/* Sensitivity Setting */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest font-mono">
+                <label className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest">
                   Sensitivity
                 </label>
-                <span className="text-sm font-mono text-cyan-400 font-bold">
+                <span className="text-sm text-cyan-400 font-bold">
                   {settings.sensitivity}%
                 </span>
               </div>
@@ -114,7 +114,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                 onChange={handleSensitivityChange}
                 className="w-full h-2 bg-blue-950 rounded-lg appearance-none cursor-pointer accent-cyan-500"
               />
-              <p className="text-[10px] text-blue-500/50 mt-1.5 text-center font-mono">
+              <p className="text-[10px] text-blue-500/50 mt-1.5 text-center">
                 Adjust if lighting causes false starts
               </p>
             </div>
@@ -122,13 +122,13 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             {/* Camera Selection */}
             {cameras.length > 1 && (
               <div>
-                <label className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest font-mono mb-2 block">
+                <label className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest mb-2 block">
                   Camera
                 </label>
                 <select
                   value={settings.cameraDeviceId || ""}
                   onChange={handleCameraChange}
-                  className="w-full bg-blue-950/60 text-white text-sm rounded-lg px-3 py-2.5 border border-blue-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all font-mono"
+                  className="w-full bg-blue-950/60 text-white text-sm rounded-lg px-3 py-2.5 border border-blue-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                 >
                   <option value="">Default Camera</option>
                   {cameras.map((camera, index) => (
@@ -161,7 +161,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                   <div className="text-sm font-semibold text-white">
                     Flashlight
                   </div>
-                  <div className="text-[10px] text-blue-500/50 font-mono">
+                  <div className="text-[10px] text-blue-500/50">
                     Enable when ARMED
                   </div>
                 </div>

@@ -28,7 +28,7 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-1/3 bg-gray-950/98 border-t-2 border-blue-700/50 z-50 flex flex-col font-mono text-xs shadow-2xl backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 h-1/3 bg-gray-950/98 border-t-2 border-blue-700/50 z-50 flex flex-col text-xs shadow-2xl backdrop-blur-sm">
       <div className="flex justify-between items-center p-2 bg-blue-950/80 border-b border-blue-800/50">
         <div className="flex items-center gap-2">
           <span className="text-cyan-400 font-bold text-[10px] tracking-wider">
@@ -59,7 +59,7 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-0.5 text-blue-200 font-mono">
+      <div className="flex-1 overflow-y-auto p-3 space-y-0.5 text-blue-200">
         {logs.map((log, i) => (
           <div
             key={i}

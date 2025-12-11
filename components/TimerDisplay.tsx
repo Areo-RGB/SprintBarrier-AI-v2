@@ -69,17 +69,14 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-blue-500/40 rounded-br-lg"></div>
 
       <div
-        className={`font-mono font-bold tracking-tighter tabular-nums ${getStatusColor()} transition-all duration-300 z-10 flex items-baseline`}
+        className={`font-bold tracking-tighter tabular-nums ${getStatusColor()} transition-all duration-300 z-10 flex items-baseline`}
       >
-        <span className="text-5xl md:text-7xl">
+        <span className="text-5xl md:text-7xl font-[Inter]">
           {mm}:{ss}
         </span>
-        <span className="text-3xl md:text-5xl text-blue-400/60">.</span>
-        <span className="text-3xl md:text-5xl">{msStr}</span>
+        <span className="text-3xl md:text-5xl text-blue-400/60 font-[Inter]">.</span>
+        <span className="text-3xl md:text-5xl font-[Inter]">{msStr}</span>
       </div>
-      <div className="mt-2 text-blue-400/60 uppercase tracking-[0.2em] text-[10px] font-semibold z-10 font-mono">
-        {state === "IDLE" ? "● READY" : `● ${state}`}
-      </div>
-    </div>
+        </div>
   );
 };

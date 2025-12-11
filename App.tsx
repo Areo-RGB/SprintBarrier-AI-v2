@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { BarrierCam } from "./components/BarrierCam";
 import { TimerDisplay } from "./components/TimerDisplay";
-import { Controls } from "./components/Controls";
 import { ConnectionStatus } from "./components/ConnectionPanel";
 import { SplitsList } from "./components/SplitsList";
 import { DebugConsole } from "./components/DebugConsole";
@@ -558,7 +557,7 @@ const App: React.FC = () => {
           <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
             SPRINT<span className="text-blue-300/80 font-medium">BARRIER</span>
           </h1>
-          <p className="text-[10px] text-blue-500/60 font-mono tracking-widest">
+          <p className="text-[10px] text-blue-500/60 tracking-widest">
             OPTICAL TIMING
           </p>
         </div>
@@ -566,11 +565,11 @@ const App: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDebug(!showDebug)}
-              className="text-[9px] bg-blue-950/80 hover:bg-blue-900/80 px-2 py-1 rounded-md text-blue-400 font-mono border border-blue-800/50 transition-all"
+              className="text-[9px] bg-blue-950/80 hover:bg-blue-900/80 px-2 py-1 rounded-md text-blue-400 border border-blue-800/50 transition-all"
             >
               {showDebug ? "HIDE" : "LOG"}
             </button>
-            <div className="text-[10px] font-mono text-blue-600/60">v2.3</div>
+            <div className="text-[10px] text-blue-600/60">v2.3</div>
           </div>
           <div className="flex items-center gap-2">
             <div
@@ -583,14 +582,14 @@ const App: React.FC = () => {
               }`}
             ></div>
             <div className="flex flex-col items-end">
-              <div className="text-[10px] font-mono font-semibold text-cyan-400">
+              <div className="text-[10px] font-semibold text-cyan-400">
                 {connectionStatus === "connected"
                   ? "LINKED"
                   : connectionStatus === "waiting"
                   ? "WAITING"
                   : "LOCAL"}
               </div>
-              <div className="text-[9px] text-blue-500/50 font-mono">
+              <div className="text-[9px] text-blue-500/50">
                 {myDeviceName}
               </div>
             </div>
@@ -605,6 +604,8 @@ const App: React.FC = () => {
           <BarrierCam
             appState={appState}
             onTrigger={handleTrigger}
+            onArm={handleArm}
+            onReset={handleReset}
             settings={settings}
             onSettingsChange={setSettings}
             addLog={addLog}
@@ -627,15 +628,6 @@ const App: React.FC = () => {
 
           {/* Splits List (Collapsible) */}
           <SplitsList splits={splits} />
-
-          {/* Controls */}
-          <div className="flex-shrink-0 flex flex-col gap-3">
-            <Controls
-              appState={appState}
-              onArm={handleArm}
-              onReset={handleReset}
-            />
-          </div>
         </div>
       </main>
     </div>

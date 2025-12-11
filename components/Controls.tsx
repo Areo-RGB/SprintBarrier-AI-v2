@@ -15,7 +15,7 @@ export const Controls: React.FC<ControlsProps> = ({
   return (
     <div className="flex flex-col gap-3 p-4 bg-gradient-to-b from-blue-950/50 to-gray-900 rounded-xl border border-blue-800/30 shadow-lg transition-all">
       <div className="flex justify-between items-center">
-        <h2 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest font-mono">
+        <h2 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest">
           Control
         </h2>
         <div className="flex items-center gap-2">
@@ -28,7 +28,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 : "bg-blue-600"
             }`}
           ></div>
-          <span className="text-[9px] text-blue-500/60 font-mono font-medium">
+          <span className="text-[9px] text-blue-500/60 font-medium">
             {appState}
           </span>
         </div>

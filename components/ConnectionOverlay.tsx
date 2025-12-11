@@ -87,18 +87,18 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>
                     </span>
                     <div className="flex flex-col">
-                      <span className="font-mono text-cyan-400 font-bold tracking-wider text-sm">
+                      <span className="text-cyan-400 font-bold tracking-wider text-sm">
                         {isHost ? 'HOST ACTIVE' : 'LINKED'}
                       </span>
                       {isHost && hostCode && (
-                        <span className="text-xs text-blue-400/70 font-mono mt-1">
+                        <span className="text-xs text-blue-400/70 mt-1">
                           Session: {hostCode}
                         </span>
                       )}
                     </div>
                   </div>
                   {isHost && (
-                    <span className="text-xs text-blue-300 font-mono bg-blue-950/60 px-3 py-1.5 rounded-lg border border-blue-700/40">
+                    <span className="text-xs text-blue-300 bg-blue-950/60 px-3 py-1.5 rounded-lg border border-blue-700/40">
                       {connectedDevices.length} {connectedDevices.length === 1 ? 'Peer' : 'Peers'}
                     </span>
                   )}
@@ -133,7 +133,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
                             </div>
                           </div>
                           {device.avgLatency > 0 && (
-                            <div className="flex gap-4 text-xs text-gray-500 font-mono mt-2">
+                            <div className="flex gap-4 text-xs text-gray-500 mt-2">
                               <span>Avg: {device.avgLatency}ms</span>
                               <span>Compensation: -{Math.floor(device.avgLatency / 2)}ms</span>
                             </div>
@@ -148,10 +148,10 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
               // Waiting for Peers State
               <div className="text-center space-y-4">
                 <div className="p-6 bg-gradient-to-b from-amber-950/30 to-gray-800 rounded-xl border border-amber-500/30">
-                  <h3 className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-3 font-mono">
+                  <h3 className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-3">
                     Session Code
                   </h3>
-                  <div className="text-5xl font-mono font-black text-white tracking-[0.3em] mb-3 drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                  <div className="text-5xl font-black text-white tracking-[0.3em] mb-3 drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">
                     {hostCode || '...'}
                   </div>
                   <p className="text-blue-400/70 text-sm mb-4">
@@ -170,7 +170,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
                         {connectedDevices.map((device) => (
                           <span
                             key={device.peerId}
-                            className="text-xs bg-cyan-950/50 text-cyan-400 px-3 py-1.5 rounded-lg border border-cyan-500/30 font-mono"
+                            className="text-xs bg-cyan-950/50 text-cyan-400 px-3 py-1.5 rounded-lg border border-cyan-500/30"
                           >
                             {device.name}
                           </span>
@@ -237,7 +237,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
                         placeholder="000"
                         value={joinCode}
                         onChange={handleCodeChange}
-                        className="w-full bg-gray-800 border-2 border-blue-700/50 rounded-xl px-4 py-4 text-3xl text-center text-white focus:outline-none focus:border-cyan-400 font-mono tracking-[0.5em] placeholder:tracking-normal placeholder:text-gray-600 transition-colors"
+                        className="w-full bg-gray-800 border-2 border-blue-700/50 rounded-xl px-4 py-4 text-3xl text-center text-white focus:outline-none focus:border-cyan-400 tracking-[0.5em] placeholder:tracking-normal placeholder:text-gray-600 transition-colors"
                         autoFocus
                       />
                     </div>

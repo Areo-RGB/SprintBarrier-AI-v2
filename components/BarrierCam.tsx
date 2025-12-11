@@ -6,6 +6,8 @@ import { ConnectionOverlay, ConnectionStatus } from "./ConnectionOverlay";
 interface BarrierCamProps {
   appState: AppState;
   onTrigger: () => void;
+  onArm: () => void;
+  onReset: () => void;
   settings: DetectionSettings;
   onSettingsChange: (settings: DetectionSettings) => void;
   addLog?: (msg: string) => void;
@@ -22,6 +24,8 @@ interface BarrierCamProps {
 export const BarrierCam: React.FC<BarrierCamProps> = ({
   appState,
   onTrigger,
+  onArm,
+  onReset,
   settings,
   onSettingsChange,
   addLog,
@@ -396,7 +400,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
       }}
     >
       {streamError && isCameraEnabled && (
-        <div className="absolute inset-0 flex items-center justify-center text-red-400 p-4 text-center z-10 pointer-events-none font-mono text-sm">
+        <div className="absolute inset-0 flex items-center justify-center text-red-400 p-4 text-center z-10 pointer-events-none text-sm">
           {streamError}
         </div>
       )}
@@ -417,7 +421,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
               d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
             />
           </svg>
-          <span className="text-xs font-mono uppercase tracking-widest">
+          <span className="text-xs uppercase tracking-widest">
             Camera Off
           </span>
         </div>
@@ -567,17 +571,40 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
         </button>
       </div>
 
+  
       {isCameraEnabled && (
-        <div className="absolute top-3 right-3 bg-gray-950/70 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-cyan-400 font-mono pointer-events-none select-none border border-blue-800/40">
-          ACT: {visualActivity.toFixed(1)}
-        </div>
-      )}
-
-      {isCameraEnabled && (
-        <div className="absolute bottom-3 left-0 w-full flex justify-center pointer-events-none select-none">
-          <div className="bg-gray-950/70 backdrop-blur-md px-3 py-1.5 rounded-full text-blue-300 text-[10px] font-medium border border-blue-800/40 font-mono tracking-wide">
-            ◄ DRAG BARRIER ►
-          </div>
+        <div className="absolute bottom-3 left-0 w-full flex justify-center pointer-events-auto">
+          {appState === AppState.IDLE || appState === AppState.FINISHED ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onArm();
+              }}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2 px-6 rounded-full text-[11px] tracking-wider border border-blue-400/30 shadow-lg shadow-blue-900/30 transition-all transform active:scale-95"
+            >
+              ▶ ARM SYSTEM
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReset();
+              }}
+              disabled={appState === AppState.CALIBRATING}
+              className={`font-bold py-2 px-6 rounded-full text-[11px] tracking-wider border transition-all transform active:scale-95 shadow-lg
+                ${
+                  appState === AppState.CALIBRATING
+                    ? "bg-amber-600/80 text-white/80 cursor-wait border border-amber-500/30 shadow-amber-900/30"
+                    : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white border border-red-400/20 shadow-red-900/30"
+                }`}
+            >
+              {appState === AppState.CALIBRATING
+                ? "◉ CALIBRATING..."
+                : appState === AppState.ARMED
+                ? "✕ CANCEL"
+                : "↺ RESET"}
+            </button>
+          )}
         </div>
       )}
 

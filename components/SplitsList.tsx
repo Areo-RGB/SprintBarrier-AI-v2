@@ -47,11 +47,11 @@ export const SplitsList: React.FC<SplitsListProps> = ({ splits }) => {
               clipRule="evenodd"
             />
           </svg>
-          <h3 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest font-mono group-hover:text-cyan-400">
+          <h3 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest group-hover:text-cyan-400">
             Splits
           </h3>
         </div>
-        <span className="text-[10px] text-blue-500/50 font-mono font-semibold group-hover:text-white transition-colors">
+        <span className="text-[10px] text-blue-500/50 font-semibold group-hover:text-white transition-colors">
           {splits.length} REC
         </span>
       </button>
@@ -68,7 +68,7 @@ export const SplitsList: React.FC<SplitsListProps> = ({ splits }) => {
           {splits.map((split, index) => (
             <div
               key={split.id}
-              className="flex justify-between items-center p-2.5 rounded-lg bg-blue-950/40 border border-blue-800/30 text-sm font-mono"
+              className="flex justify-between items-center p-2.5 rounded-lg bg-blue-950/40 border border-blue-800/30 text-sm"
             >
               <span className="text-blue-500/60 w-8 text-xs font-semibold">
                 #{index + 1}

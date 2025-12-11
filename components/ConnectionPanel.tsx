@@ -44,18 +44,18 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
             </span>
             <div className="flex flex-col">
-              <span className="font-mono text-cyan-400 font-bold tracking-wider leading-none text-sm">
+              <span className="text-cyan-400 font-bold tracking-wider leading-none text-sm">
                 {isHost ? "HOST ACTIVE" : "LINKED"}
               </span>
               {isHost && hostCode && (
-                <span className="text-[9px] text-blue-500/50 font-mono mt-0.5">
+                <span className="text-[9px] text-blue-500/50 mt-0.5">
                   SESSION: {hostCode}
                 </span>
               )}
             </div>
           </div>
           {isHost && (
-            <span className="text-[10px] text-blue-400/70 font-mono bg-blue-950/60 px-2 py-1 rounded-md border border-blue-800/30">
+            <span className="text-[10px] text-blue-400/70 bg-blue-950/60 px-2 py-1 rounded-md border border-blue-800/30">
               PEERS: {connectedDevices.length}
             </span>
           )}
@@ -68,7 +68,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                 key={device.peerId}
                 className="flex flex-col gap-1 py-1 border-b border-blue-800/20 last:border-0"
               >
-                <div className="flex justify-between items-center text-xs font-mono">
+                <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
                     <span className="text-blue-200">{device.name}</span>
@@ -91,7 +91,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                   </div>
                 </div>
                 {device.avgLatency > 0 && (
-                  <div className="flex justify-end items-center gap-2 text-[9px] text-blue-500/50 font-mono px-1">
+                  <div className="flex justify-end items-center gap-2 text-[9px] text-blue-500/50 px-1">
                     <span>Comp: -{Math.floor(device.avgLatency / 2)}ms</span>
                     <span className="text-blue-700">|</span>
                     <span>Avg: {device.avgLatency}ms</span>
@@ -108,31 +108,31 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
   if (connectionStatus === "waiting" && isHost) {
     return (
       <div className="bg-gradient-to-b from-amber-950/30 to-gray-900 border border-amber-500/30 rounded-xl p-5 text-center shadow-lg animate-fade-in">
-        <h3 className="text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-2 font-mono">
+        <h3 className="text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-2">
           Ready to Join
         </h3>
-        <div className="text-4xl font-mono font-black text-white tracking-[0.3em] mb-2 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+        <div className="text-4xl font-black text-white tracking-[0.3em] mb-2 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
           {hostCode || "..."}
         </div>
-        <p className="text-blue-400/50 text-[10px] mb-3 font-mono">
+        <p className="text-blue-400/50 text-[10px] mb-3">
           Enter this code on other devices
         </p>
 
         {connectedDevices.length === 0 ? (
-          <div className="flex justify-center items-center gap-2 text-[10px] text-blue-500/60 animate-pulse font-mono">
+          <div className="flex justify-center items-center gap-2 text-[10px] text-blue-500/60 animate-pulse">
             <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
             Waiting for peers...
           </div>
         ) : (
           <div className="mt-3">
-            <p className="text-[9px] text-blue-500/50 uppercase font-bold mb-2 font-mono">
+            <p className="text-[9px] text-blue-500/50 uppercase font-bold mb-2">
               Connected
             </p>
             <div className="flex flex-wrap justify-center gap-1.5">
               {connectedDevices.map((device, idx) => (
                 <span
                   key={idx}
-                  className="text-[10px] bg-cyan-950/50 text-cyan-400 px-2 py-1 rounded-md border border-cyan-500/30 font-mono"
+                  className="text-[10px] bg-cyan-950/50 text-cyan-400 px-2 py-1 rounded-md border border-cyan-500/30"
                 >
                   {device.name}
                 </span>
@@ -146,7 +146,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
 
   return (
     <div className="bg-gradient-to-b from-blue-950/40 to-gray-900 border border-blue-800/30 rounded-xl p-4">
-      <h3 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest mb-3 font-mono">
+      <h3 className="text-blue-400/70 text-[10px] font-bold uppercase tracking-widest mb-3">
         Multiplayer
       </h3>
 
@@ -155,14 +155,14 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
           <button
             onClick={onHost}
             disabled={connectionStatus === "connecting"}
-            className="flex-1 bg-blue-950/60 hover:bg-blue-900/60 text-blue-200 text-xs font-bold py-3 px-4 rounded-lg transition-all border border-blue-700/40 disabled:opacity-50 font-mono tracking-wide"
+            className="flex-1 bg-blue-950/60 hover:bg-blue-900/60 text-blue-200 text-xs font-bold py-3 px-4 rounded-lg transition-all border border-blue-700/40 disabled:opacity-50 tracking-wide"
           >
             ◈ HOST
           </button>
           <button
             onClick={() => setShowJoinInput(true)}
             disabled={connectionStatus === "connecting"}
-            className="flex-1 bg-blue-950/60 hover:bg-blue-900/60 text-blue-200 text-xs font-bold py-3 px-4 rounded-lg transition-all border border-blue-700/40 disabled:opacity-50 font-mono tracking-wide"
+            className="flex-1 bg-blue-950/60 hover:bg-blue-900/60 text-blue-200 text-xs font-bold py-3 px-4 rounded-lg transition-all border border-blue-700/40 disabled:opacity-50 tracking-wide"
           >
             ◉ JOIN
           </button>
@@ -176,9 +176,9 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
               placeholder="000"
               value={joinCode}
               onChange={handleCodeChange}
-              className="w-full bg-gray-950 border-2 border-blue-700/50 rounded-lg px-4 py-3 text-2xl text-center text-white focus:outline-none focus:border-cyan-400 font-mono tracking-[0.5em] placeholder:tracking-normal placeholder:text-blue-800 transition-colors"
+              className="w-full bg-gray-950 border-2 border-blue-700/50 rounded-lg px-4 py-3 text-2xl text-center text-white focus:outline-none focus:border-cyan-400 tracking-[0.5em] placeholder:tracking-normal placeholder:text-blue-800 transition-colors"
             />
-            <div className="absolute top-1/2 right-3 -translate-y-1/2 text-blue-600 text-[10px] pointer-events-none font-mono">
+            <div className="absolute top-1/2 right-3 -translate-y-1/2 text-blue-600 text-[10px] pointer-events-none">
               ID
             </div>
           </div>
@@ -204,7 +204,7 @@ export const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
       )}
 
       {connectionStatus === "connecting" && (
-        <div className="mt-3 text-[10px] text-amber-400 text-center flex items-center justify-center gap-2 font-mono">
+        <div className="mt-3 text-[10px] text-amber-400 text-center flex items-center justify-center gap-2">
           <svg
             className="animate-spin h-3 w-3 text-amber-400"
             xmlns="http://www.w3.org/2000/svg"

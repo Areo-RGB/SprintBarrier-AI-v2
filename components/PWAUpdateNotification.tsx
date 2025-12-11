@@ -103,7 +103,7 @@ export const PWAUpdateNotification: React.FC = () => {
 
       {offlineReady && (
         <div className="mt-2 bg-gray-950/95 backdrop-blur-md rounded-lg border border-blue-800/40 p-2 text-center">
-          <p className="text-[10px] text-blue-300 font-mono">
+          <p className="text-[10px] text-blue-300">
             <span className="inline-block w-1.5 h-1.5 bg-cyan-400 rounded-full mr-1.5 animate-pulse"></span>
             App ready for offline use
           </p>
