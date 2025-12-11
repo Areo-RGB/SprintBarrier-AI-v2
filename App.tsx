@@ -601,7 +601,7 @@ const App: React.FC = () => {
       {/* Main Layout - Mobile Optimized */}
       <main className="flex-1 flex flex-col gap-3 h-full overflow-y-auto max-w-lg mx-auto w-full pb-6">
         {/* 1. Video Feed */}
-        <div className="shrink-0 min-h-[280px] md:min-h-[320px] relative rounded-xl overflow-hidden border border-blue-800/40 bg-gray-900 shadow-2xl shadow-blue-950/50">
+        <div className="shrink-0 min-h-[200px] md:min-h-[240px] relative rounded-xl overflow-hidden border border-blue-800/40 bg-gray-900 shadow-2xl shadow-blue-950/50">
           <BarrierCam
             appState={appState}
             onTrigger={handleTrigger}
