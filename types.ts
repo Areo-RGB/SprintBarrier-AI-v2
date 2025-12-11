@@ -8,6 +8,7 @@ export enum AppState {
 
 export interface DetectionSettings {
   sensitivity: number; // 1-100
+  torchEnabled: boolean;
 }
 
 export interface Split {

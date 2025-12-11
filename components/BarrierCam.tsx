@@ -17,24 +17,25 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
   const [visualActivity, setVisualActivity] = useState(0);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
 
-  // Refs for loop stability (These allow us to access latest props without restarting the loop)
-  const prevPixelsRef = useRef<Uint8ClampedArray | null>(null);
+  // Refs for loop stability
+  // Store previous pixels for 3 distinct zones
+  const prevPixelsRef = useRef<(Uint8ClampedArray | null)[]>([null, null, null]);
   const requestRef = useRef<number>();
   const settingsRef = useRef(settings);
   const appStateRef = useRef(appState);
   const onTriggerRef = useRef(onTrigger);
   const addLogRef = useRef(addLog);
   
-  // Trigger cooldown to prevent network flooding and double counting on a single pass
+  // Trigger cooldown
   const lastTriggerTimeRef = useRef<number>(0);
 
   // Position state refs
-  const posRef = useRef({ x: 0.5, y: 0.5 }); // Normalized 0-1 position
+  const posRef = useRef({ x: 0.5, y: 0.5 }); // We only use x effectively for the column
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const lastRectRef = useRef({ x: 0, y: 0, w: 0, h: 0 }); // Canvas pixels
+  const lastRectRef = useRef({ x: 0, y: 0, w: 0, h: 0 }); // Bounding box of the detector column
 
-  // Sync refs to props on every render
+  // Sync refs to props
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   useEffect(() => { appStateRef.current = appState; }, [appState]);
   useEffect(() => { onTriggerRef.current = onTrigger; }, [onTrigger]);
@@ -73,7 +74,6 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
     if (isCameraEnabled) {
       startCamera();
     } else {
-      // Clean up if disabled
       if (videoRef.current) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream?.getTracks().forEach(track => track.stop());
@@ -92,6 +92,37 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
     }
   }, [isCameraEnabled]);
 
+  // Torch Management
+  useEffect(() => {
+    const applyTorch = async () => {
+        if (!videoRef.current || !isCameraEnabled) return;
+        
+        const stream = videoRef.current.srcObject as MediaStream;
+        if (!stream) return;
+        
+        const track = stream.getVideoTracks()[0];
+        if (!track) return;
+
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        // @ts-ignore
+        const hasTorch = !!capabilities.torch || ('torch' in capabilities);
+
+        if (hasTorch) {
+            const turnOn = settings.torchEnabled && appState === AppState.ARMED;
+            try {
+                await track.applyConstraints({
+                    // @ts-ignore
+                    advanced: [{ torch: turnOn }]
+                });
+            } catch (e) {
+                // Ignore torch errors
+            }
+        }
+    };
+
+    applyTorch();
+  }, [appState, settings.torchEnabled, isCameraEnabled]);
+
   // Main Loop
   const processFrame = useCallback(() => {
     if (!isCameraEnabled) return;
@@ -101,7 +132,6 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
     
     if (!video || !canvas) return;
     
-    // If video is not playing/ready, try again next frame
     if (video.readyState !== 4 || video.paused || video.ended) {
        requestRef.current = requestAnimationFrame(processFrame);
        return;
@@ -110,131 +140,129 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    // Match canvas to video dimensions
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
     }
 
-    // Draw current frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Current State values from Refs
     const currentSettings = settingsRef.current;
     const currentState = appStateRef.current;
 
-    // --- Detection Logic ---
+    // --- Detection Layout (Triple Beam) ---
+    // Size is smaller to be more precise: 8% of min dimension
+    const size = Math.floor(Math.min(canvas.width, canvas.height) * 0.08); 
     
-    // Calculate square box based on posRef (normalized)
-    // Size is 10% of min dimension
-    const size = Math.floor(Math.min(canvas.width, canvas.height) * 0.1); 
+    // Calculate horizontal position based on user drag
+    const centerX = Math.floor(posRef.current.x * canvas.width);
+    // Clamp to screen
+    const clampedX = Math.max(size/2, Math.min(centerX, canvas.width - size/2));
+    const x = clampedX - size/2;
+
+    // Define 3 vertical positions fixed at 25%, 50%, 75% height
+    const yPositions = [
+        Math.floor(canvas.height * 0.25) - size/2,
+        Math.floor(canvas.height * 0.50) - size/2,
+        Math.floor(canvas.height * 0.75) - size/2
+    ];
+
+    // Update Drag Area: Covers the entire vertical strip from top box to bottom box
+    lastRectRef.current = { 
+        x: x, 
+        y: yPositions[0], 
+        w: size, 
+        h: (yPositions[2] + size) - yPositions[0] 
+    };
     
-    // Calculate top-left based on center position
-    let x = Math.floor((posRef.current.x * canvas.width) - (size / 2));
-    let y = Math.floor((posRef.current.y * canvas.height) - (size / 2));
+    // Check all 3 zones
+    const scores: number[] = [];
+    const pixelCount = size * size;
 
-    // Clamp to bounds
-    const maxX = canvas.width - size;
-    const maxY = canvas.height - size;
-    x = Math.max(0, Math.min(x, maxX));
-    y = Math.max(0, Math.min(y, maxY));
+    yPositions.forEach((y, index) => {
+        const imageData = ctx.getImageData(x, y, size, size);
+        const data = imageData.data;
+        let diffScore = 0;
 
-    // Update last rect for hit testing
-    lastRectRef.current = { x, y, w: size, h: size };
-    
-    // Get pixel data for the square
-    const imageData = ctx.getImageData(x, y, size, size);
-    const data = imageData.data;
-    
-    let diffScore = 0;
+        const prevData = prevPixelsRef.current[index];
 
-    if (prevPixelsRef.current && prevPixelsRef.current.length === data.length) {
-      const prevData = prevPixelsRef.current;
-      
-      // Calculate difference (Skip alpha channel +4)
-      for (let i = 0; i < data.length; i += 4) {
-        const rDiff = Math.abs(data[i] - prevData[i]);
-        const gDiff = Math.abs(data[i + 1] - prevData[i + 1]);
-        const bDiff = Math.abs(data[i + 2] - prevData[i + 2]);
-        diffScore += (rDiff + gDiff + bDiff);
-      }
-    }
+        if (prevData && prevData.length === data.length) {
+          for (let i = 0; i < data.length; i += 4) {
+            const rDiff = Math.abs(data[i] - prevData[i]);
+            const gDiff = Math.abs(data[i + 1] - prevData[i + 1]);
+            const bDiff = Math.abs(data[i + 2] - prevData[i + 2]);
+            diffScore += (rDiff + gDiff + bDiff);
+          }
+        }
+        
+        // Update history for this zone
+        prevPixelsRef.current[index] = new Uint8ClampedArray(data);
+        scores.push(diffScore / pixelCount);
+    });
 
-    // Update reference frame
-    prevPixelsRef.current = new Uint8ClampedArray(data);
+    // Display average activity
+    const avgScore = scores.reduce((a, b) => a + b, 0) / 3;
+    setVisualActivity(avgScore);
 
-    // Normalize score
-    const pixelCount = (size * size);
-    const normalizedScore = diffScore / pixelCount;
-    
-    setVisualActivity(normalizedScore);
-
-    // Trigger Logic
+    // Trigger Logic: ALL zones must exceed threshold (AND logic)
     const threshold = Math.max(5, 155 - (currentSettings.sensitivity * 1.5));
+    const isTriggered = scores.every(s => s > threshold);
     const now = Date.now();
     
-    // Allow triggers in ARMED (Start) and RUNNING (Split)
-    if ((currentState === AppState.ARMED || currentState === AppState.RUNNING) && normalizedScore > threshold) {
-        // Debounce 500ms
+    if ((currentState === AppState.ARMED || currentState === AppState.RUNNING) && isTriggered) {
         if (now - lastTriggerTimeRef.current > 500) {
             lastTriggerTimeRef.current = now;
-            addLogRef.current?.(`Motion detected (Score: ${normalizedScore.toFixed(0)} > ${threshold.toFixed(0)}). State: ${currentState}`);
-            // Call the ref function to avoid dependency changes restarting the loop
+            addLogRef.current?.(`Motion detected (Triple Beam). State: ${currentState}`);
             onTriggerRef.current();
         }
     }
 
-    // --- Drawing Visuals ---
+    // --- Visuals ---
     
-    ctx.lineWidth = 2; 
+    // Base Color
+    let baseColor = '255, 255, 255'; // White
+    if (currentState === AppState.ARMED) baseColor = '239, 68, 68'; // Red
+    else if (currentState === AppState.RUNNING) baseColor = '52, 211, 153'; // Emerald
     
-    if (currentState === AppState.ARMED) {
-       ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; // Red-500
-       ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-    } else if (currentState === AppState.RUNNING) {
-       ctx.strokeStyle = 'rgba(52, 211, 153, 0.9)'; // Emerald-400
-       ctx.fillStyle = 'rgba(52, 211, 153, 0.2)';
-    } else {
-       ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // White
-       ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    }
-    
-    // Highlight if dragging
-    if (isDraggingRef.current) {
-        ctx.strokeStyle = 'rgba(255, 255, 0, 1.0)';
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
-        ctx.lineWidth = 3;
-    }
+    if (isDraggingRef.current) baseColor = '255, 255, 0'; // Yellow
 
-    ctx.strokeRect(x, y, size, size);
-    ctx.fillRect(x, y, size, size);
+    ctx.strokeStyle = `rgba(${baseColor}, 0.9)`;
+    ctx.lineWidth = 2;
 
-    // Crosshairs
-    const crossSize = size / 2 + 4; 
+    // Draw connecting line (beam pole)
     ctx.beginPath();
-    
-    // Horizontal
-    ctx.moveTo(x + size/2 - crossSize, y + size/2);
-    ctx.lineTo(x + size/2 + crossSize, y + size/2);
-    
-    // Vertical
-    ctx.moveTo(x + size/2, y + size/2 - crossSize);
-    ctx.lineTo(x + size/2, y + size/2 + crossSize);
-    
-    ctx.lineWidth = 1;
+    ctx.moveTo(clampedX, yPositions[0] + size/2);
+    ctx.lineTo(clampedX, yPositions[2] + size/2);
     ctx.stroke();
 
-    // Glow effect
-    if (currentState === AppState.ARMED || currentState === AppState.RUNNING || isDraggingRef.current) {
-        ctx.save();
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = isDraggingRef.current ? '#FFFF00' : (currentState === AppState.ARMED ? '#EF4444' : '#34D399');
+    // Draw 3 boxes
+    yPositions.forEach((y, i) => {
+        const isHot = scores[i] > threshold;
+        
+        // Individual box feedback
+        if (isHot) {
+            ctx.fillStyle = `rgba(${baseColor}, 0.6)`;
+            ctx.shadowColor = `rgb(${baseColor})`;
+            ctx.shadowBlur = 15;
+        } else {
+            ctx.fillStyle = `rgba(${baseColor}, 0.1)`;
+            ctx.shadowBlur = 0;
+        }
+
         ctx.strokeRect(x, y, size, size);
-        ctx.restore();
+        ctx.fillRect(x, y, size, size);
+        
+        // Reset shadow for next ops
+        ctx.shadowBlur = 0;
+    });
+    
+    // Overall Glow if triggered/armed
+    if (currentState === AppState.ARMED || isDraggingRef.current) {
+         // No extra glow loop needed, handled per box
     }
 
     requestRef.current = requestAnimationFrame(processFrame);
-  }, [isCameraEnabled]); // Reduced dependencies to just camera state
+  }, [isCameraEnabled]);
 
   useEffect(() => {
     if (isCameraEnabled) {
@@ -257,10 +285,10 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
     const canvasX = relX * canvasRef.current.width;
     const canvasY = relY * canvasRef.current.height;
 
+    // Use the calculated bounding box of the whole strip
     const { x, y, w, h } = lastRectRef.current;
+    const padding = 30; // Generous hit area
 
-    // Hit test with generous padding
-    const padding = 20;
     if (
       canvasX >= x - padding && 
       canvasX <= x + w + padding &&
@@ -268,10 +296,9 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
       canvasY <= y + h + padding
     ) {
       isDraggingRef.current = true;
-      // Store offset of pointer from center of box to avoid jumping
       dragOffsetRef.current = {
         x: posRef.current.x - relX,
-        y: posRef.current.y - relY
+        y: 0 // Y drag is disabled
       };
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }
@@ -282,12 +309,11 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
 
     const rect = containerRef.current.getBoundingClientRect();
     const relX = (e.clientX - rect.left) / rect.width;
-    const relY = (e.clientY - rect.top) / rect.height;
 
-    // Update position with offset
+    // Only update X, Y is fixed
     posRef.current = {
       x: Math.max(0, Math.min(1, relX + dragOffsetRef.current.x)),
-      y: Math.max(0, Math.min(1, relY + dragOffsetRef.current.y))
+      y: 0.5
     };
   };
 
@@ -304,7 +330,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        style={{ touchAction: 'none', cursor: isCameraEnabled ? 'crosshair' : 'default' }}
+        style={{ touchAction: 'none', cursor: isCameraEnabled ? 'col-resize' : 'default' }}
     >
       {streamError && isCameraEnabled && (
         <div className="absolute inset-0 flex items-center justify-center text-red-500 p-4 text-center z-10 pointer-events-none">
@@ -321,7 +347,6 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
         </div>
       )}
       
-      {/* Video Feed */}
       <video
         ref={videoRef}
         autoPlay
@@ -330,16 +355,14 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
         className={`w-full h-full object-cover pointer-events-none transition-opacity duration-500 ${isCameraEnabled ? 'opacity-80' : 'opacity-0'}`}
       />
       
-      {/* Analysis Overlay - Only visible if camera is on */}
       <canvas 
         ref={canvasRef}
         className={`absolute top-0 left-0 w-full h-full object-cover pointer-events-none ${isCameraEnabled ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* Toggle Camera Button */}
       <button 
         onClick={(e) => {
-            e.stopPropagation(); // Prevent drag interference
+            e.stopPropagation(); 
             setIsCameraEnabled(!isCameraEnabled);
         }}
         className="absolute top-4 left-4 z-20 bg-black/50 hover:bg-black/80 backdrop-blur-md p-2 rounded-full text-white transition-all border border-white/10"
@@ -357,7 +380,6 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
         )}
       </button>
 
-      {/* Activity Indicator (Debug) */}
       {isCameraEnabled && (
         <div className="absolute top-4 right-4 bg-black/50 px-2 py-1 rounded text-xs text-green-400 font-mono pointer-events-none select-none">
             Act: {visualActivity.toFixed(1)}
@@ -367,7 +389,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({ appState, onTrigger, set
       {isCameraEnabled && (
         <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none select-none">
             <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-white text-xs font-medium border border-white/10">
-                DRAG ZONE TO POSITION
+                DRAG VERTICAL BARRIER
             </div>
         </div>
       )}

@@ -14,7 +14,8 @@ const PEER_PREFIX = 'sb-sprint-v1-';
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [settings, setSettings] = useState<DetectionSettings>({
-    sensitivity: 85
+    sensitivity: 85,
+    torchEnabled: false
   });
   
   // Debugging
@@ -94,40 +95,6 @@ const App: React.FC = () => {
       }
     } else if (appState === AppState.RUNNING) {
       addLog(`System RUNNING. Attempting split. Current splits: ${splits.length}`);
-      
-      // Calculate remote elapsed time based on the effective timestamp
-      // recordSplit(remoteElapsedTime) expects the total elapsed time of the event
-      // We need to calculate what the timer WAS at effectiveTime.
-      // However, useStopwatch relies on startTimeRef.
-      // Since startTimeRef is local, we can just pass (effectiveTime - startTime) as elapsed?
-      // useStopwatch.recordSplit handles this if we pass the timestamp? 
-      // Actually recordSplit accepts 'remoteElapsedTime'.
-      
-      // We need to fetch the current startTime to calc diff
-      // But we can't access startTimeRef directly here easily without exposing it.
-      // Alternative: Pass effectiveTime to recordSplit if we refactor recordSplit?
-      // Current recordSplit signature: recordSplit(remoteElapsedTime?: number)
-      // remoteElapsedTime = effectiveTime - startTime.
-      // We need to track startTime in App or trust useStopwatch to handle logic if we pass 'now' - compensation?
-      // The simplest way: useStopwatch calculates elapsed based on Date.now().
-      // If we pass an explicit "elapsed time", it uses it.
-      
-      // Let's rely on the stopwatch hook's internal startTime tracking for calculating `elapsed`.
-      // We need to know the start time to calculate the offset elapsed time.
-      // Since `elapsed` state in App is updated via rAF, it might be slightly off "real" Date.now().
-      // Ideally recordSplit should accept an absolute timestamp, but it takes elapsed.
-      // We can approximate:
-      const estimatedElapsed = effectiveTime - (Date.now() - elapsed);
-      // Wait, 'elapsed' is purely display state. We need the real start time.
-      // Let's just pass nothing to recordSplit if local, but we need compensation.
-      // Let's modify recordSplit to just take the compensated elapsed time.
-      // Better yet, let's look at useStopwatch:
-      // const currentElapsed = remoteElapsedTime ?? (startTimeRef.current ? Date.now() - startTimeRef.current : 0);
-      
-      // We can calculate the correct elapsed time here:
-      // We know `elapsed` (from hook) ~= Date.now() - startTime. 
-      // So startTime ~= Date.now() - elapsed.
-      // So `compensatedElapsed` = effectiveTime - (Date.now() - elapsed) = (now - comp) - (now - elapsed) = elapsed - comp.
       
       const compensatedElapsed = Math.max(0, elapsed - compensationMs);
       
@@ -452,7 +419,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-6 font-sans relative">
+    <div className="min-h-screen bg-black text-white p-4 md:p-6 font-sans relative flex flex-col">
       <DebugConsole 
         logs={logs} 
         isOpen={showDebug} 
@@ -460,7 +427,7 @@ const App: React.FC = () => {
         onClear={() => setLogs([])}
       />
       
-      <header className="mb-6 flex justify-between items-end border-b border-gray-800 pb-4">
+      <header className="mb-6 flex justify-between items-end border-b border-gray-800 pb-4 shrink-0">
         <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
             SprintBarrier<span className="text-white font-light">.AI</span>
@@ -475,7 +442,7 @@ const App: React.FC = () => {
                  >
                      {showDebug ? 'HIDE LOGS' : 'DEBUG'}
                  </button>
-                 <div className="text-xs font-mono text-gray-600">SYS.VER.2.1</div>
+                 <div className="text-xs font-mono text-gray-600">SYS.VER.2.2</div>
              </div>
              <div className="flex items-center gap-2">
                  <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : (connectionStatus === 'waiting' ? 'bg-amber-500 animate-pulse' : 'bg-gray-600')}`}></div>
@@ -491,10 +458,11 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)]">
-        {/* Left Column: Video Feed & Config */}
-        <div className="lg:w-1/3 flex flex-col gap-6">
-            <div className="flex-grow min-h-[300px] lg:min-h-0">
+      {/* Main Layout - Single Column Optimized */}
+      <main className="flex-1 flex flex-col gap-4 h-full overflow-y-auto max-w-2xl mx-auto w-full pb-10">
+            
+            {/* 1. Video Feed */}
+            <div className="shrink-0 min-h-[300px] relative rounded-2xl overflow-hidden border border-gray-800 bg-gray-900 shadow-xl">
                  <BarrierCam 
                     appState={appState} 
                     onTrigger={handleTrigger} 
@@ -503,6 +471,15 @@ const App: React.FC = () => {
                 />
             </div>
             
+            {/* 2. Timer Display */}
+            <div className="shrink-0 h-32">
+                <TimerDisplay elapsedMs={elapsed} state={appState} />
+            </div>
+
+            {/* 3. Splits List (Collapsible) */}
+            <SplitsList splits={splits} />
+
+            {/* 4. Controls */}
             <div className="flex-shrink-0 flex flex-col gap-4">
                 <Controls 
                     appState={appState} 
@@ -522,16 +499,6 @@ const App: React.FC = () => {
                     onJoin={joinSession}
                 />
             </div>
-        </div>
-
-        {/* Right Column: Timer & Data */}
-        <div className="lg:w-2/3 flex flex-col gap-6">
-            <div className="h-[40vh] lg:h-1/2">
-                <TimerDisplay elapsedMs={elapsed} state={appState} />
-            </div>
-            
-            <SplitsList splits={splits} />
-        </div>
       </main>
     </div>
   );
