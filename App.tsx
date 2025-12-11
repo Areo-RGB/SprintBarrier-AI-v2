@@ -334,9 +334,53 @@ const App: React.FC = () => {
     setConnectedDevices([]);
     addLog("Starting Host...");
 
-    const tryRegisterHost = () => {
-      const code = Math.floor(Math.random() * 900 + 100).toString();
-      const fullId = `${PEER_PREFIX}${code}`;
+    const code = '999';
+    const fullId = `${PEER_PREFIX}${code}`;
+
+    // First, try to clear any stale session by attempting to connect with a temporary peer
+    addLog("Checking for stale session...");
+    const tempPeer = new Peer();
+
+    tempPeer.on("open", () => {
+      const testConn = tempPeer.connect(fullId);
+
+      // If connection succeeds, a stale session exists
+      testConn.on("open", () => {
+        addLog("Found stale session, cleaning up...");
+        testConn.close();
+        tempPeer.destroy();
+
+        // Wait a moment for cleanup, then start fresh
+        setTimeout(() => {
+          startFreshHost();
+        }, 500);
+      });
+
+      // If connection fails, no stale session - start immediately
+      testConn.on("error", () => {
+        addLog("No stale session found");
+        tempPeer.destroy();
+        startFreshHost();
+      });
+
+      // Timeout fallback - start anyway after 2 seconds
+      setTimeout(() => {
+        if (tempPeer && !tempPeer.destroyed) {
+          addLog("Cleanup check timeout, proceeding...");
+          tempPeer.destroy();
+          startFreshHost();
+        }
+      }, 2000);
+    });
+
+    tempPeer.on("error", (err) => {
+      addLog(`Cleanup check error: ${err.type}`);
+      tempPeer.destroy();
+      startFreshHost();
+    });
+
+    function startFreshHost() {
+      addLog("Creating new host session...");
       const peer = new Peer(fullId);
 
       peer.on("open", (id) => {
@@ -349,8 +393,11 @@ const App: React.FC = () => {
       peer.on("error", (err) => {
         addLog(`Peer Error: ${err.type}`);
         if (err.type === "unavailable-id") {
-          peer.destroy();
-          tryRegisterHost();
+          addLog("Session ID still in use, retrying in 2s...");
+          setTimeout(() => {
+            peer.destroy();
+            startHosting();
+          }, 2000);
         } else {
           setConnectionStatus("disconnected");
         }
@@ -362,9 +409,7 @@ const App: React.FC = () => {
       });
 
       peerRef.current = peer;
-    };
-
-    tryRegisterHost();
+    }
   }, [addLog]);
 
   const joinSession = useCallback(

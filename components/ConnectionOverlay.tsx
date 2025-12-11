@@ -26,7 +26,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = ({
   onJoin,
   onHost
 }) => {
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState('999');
   const [showJoinInput, setShowJoinInput] = useState(false);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
