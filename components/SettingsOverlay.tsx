@@ -170,44 +170,90 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
             {/* Flashlight Toggle */}
             <div className="flex items-center justify-between p-3 bg-blue-950/40 rounded-lg border border-blue-800/30">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-amber-500/10 rounded-lg flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-5 h-5 text-amber-400"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813A3.75 3.75 0 007.466 7.89l.813-2.846A.75.75 0 019 4.5zM18 1.5a.75.75 0 01.728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 010 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 01-1.456 0l-.258-1.036a2.625 2.625 0 00-1.91-1.91l-1.036-.258a.75.75 0 010-1.456l1.036-.258a2.625 2.625 0 001.91-1.91l.258-1.036A.75.75 0 0118 1.5zM16.5 15a.75.75 0 01.712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 010 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 01-1.422 0l-.395-1.183a1.5 1.5 0 00-.948-.948l-1.183-.395a.75.75 0 010-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0116.5 15z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white">
-                    Flashlight
-                  </div>
-                  <div className="text-[10px] text-blue-500/50">
-                    Enable when ARMED
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="w-4 h-4 text-amber-400"
+                >
+                  <path
+                    d="M12 2C9.79 2 8 2.79 8 6.21V8.5C8 9.99 9.79 11.78 12 11.78V14.22C9.79 16.22 8 17.01 8 18.79V21.21C8 21.35 9.79 22 12 22C14.21 22 16 21.35 16 20.21V17.01C14.22 16.22 13.44 15.01 12 13.79V11.21C14.22 9.79 16 8.01 16 6.21V3.79C16 2.65 14.21 2 12 2Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Flashlight</span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={settings.torchEnabled}
-                  onChange={(e) =>
-                    onSettingsChange({
-                      ...settings,
-                      torchEnabled: e.target.checked,
-                    })
-                  }
+              <button
+                onClick={() => onSettingsChange({ ...settings, torchEnabled: !settings.torchEnabled })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  settings.torchEnabled
+                    ? "bg-blue-600"
+                    : "bg-gray-700"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                    settings.torchEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
                 />
-                <div className="w-10 h-5 bg-blue-950 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
-              </label>
+              </button>
+            </div>
+
+            {/* Camera Permission Button */}
+            <div className="flex items-center justify-between p-3 bg-blue-950/40 rounded-lg border border-blue-800/30">
+              <div className="flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="w-4 h-4 text-blue-400"
+                >
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v8z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Camera Access</span>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    // Method 1: Try to set a flag first
+                    localStorage.setItem('cameraPermissionRequested', 'true');
+                    
+                    // Method 2: Try with different constraints
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                      video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                      } 
+                    });
+                    
+                    if (stream) {
+                      console.log("Camera access successful");
+                      // Stop the stream immediately
+                      stream.getTracks().forEach(track => track.stop());
+                    }
+                  } catch (err) {
+                    console.error("Camera permission error:", err);
+                    
+                    // Method 3: Try to reload with permission parameter
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('camera', 'requested');
+                    window.location.href = currentUrl.toString();
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Request Camera Access
+              </button>
             </div>
           </div>
 
