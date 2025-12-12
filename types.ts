@@ -10,6 +10,7 @@ export interface DetectionSettings {
   sensitivity: number; // 1-100
   torchEnabled: boolean;
   cameraDeviceId?: string; // Selected camera device ID
+  minDelayBetweenDetections: number; // Minimum delay between detections in ms
 }
 
 export interface Split {

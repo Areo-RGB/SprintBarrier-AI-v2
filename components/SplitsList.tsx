@@ -65,13 +65,13 @@ export const SplitsList: React.FC<SplitsListProps> = ({ splits }) => {
           ref={scrollRef}
           className="overflow-y-auto p-2 space-y-1.5 border-t border-blue-800/30"
         >
-          {splits.map((split, index) => (
+          {[...splits].reverse().map((split, index) => (
             <div
               key={split.id}
               className="flex justify-between items-center p-2.5 rounded-lg bg-blue-950/40 border border-blue-800/30 text-sm"
             >
               <span className="text-blue-500/60 w-8 text-xs font-semibold">
-                #{index + 1}
+                #{splits.length - index}
               </span>
               <span className="text-white font-bold tabular-nums">
                 {formatTime(split.time)}

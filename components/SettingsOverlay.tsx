@@ -42,6 +42,10 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
     onSettingsChange({ ...settings, sensitivity: parseInt(e.target.value) });
   };
 
+  const handleMinDelayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSettingsChange({ ...settings, minDelayBetweenDetections: parseInt(e.target.value) });
+  };
+
   const handleCameraChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onSettingsChange({ ...settings, cameraDeviceId: e.target.value });
   };
@@ -116,6 +120,30 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               />
               <p className="text-[10px] text-blue-500/50 mt-1.5 text-center">
                 Adjust if lighting causes false starts
+              </p>
+            </div>
+
+            {/* Minimum Delay Between Detections */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest">
+                  Min Delay Between Detections
+                </label>
+                <span className="text-sm text-cyan-400 font-bold">
+                  {settings.minDelayBetweenDetections}ms
+                </span>
+              </div>
+              <input
+                type="range"
+                min="100"
+                max="2000"
+                step="100"
+                value={settings.minDelayBetweenDetections}
+                onChange={handleMinDelayChange}
+                className="w-full h-2 bg-blue-950 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+              />
+              <p className="text-[10px] text-blue-500/50 mt-1.5 text-center">
+                Minimum time between trigger events
               </p>
             </div>
 

@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<DetectionSettings>({
     sensitivity: 85,
     torchEnabled: false,
+    minDelayBetweenDetections: 500,
   });
 
   // Debugging
