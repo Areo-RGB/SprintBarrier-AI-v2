@@ -578,7 +578,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
               }}
               className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2 px-4 rounded-full text-[10px] tracking-wider border border-blue-400/30 shadow-lg shadow-blue-900/30 transition-all transform active:scale-95"
             >
-              ▶ ARM
+              ARM
             </button>
           ) : (
             <button
