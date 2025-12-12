@@ -458,7 +458,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
-              className="w-4 h-4 text-cyan-400"
+              className="w-4 h-4 text-white"
             >
               <path d="M4.5 4.5a3 3 0 00-3 3v9a3 3 0 003 3h8.25a3 3 0 003-3v-9a3 3 0 00-3-3H4.5zM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06z" />
             </svg>
@@ -467,7 +467,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
-              className="w-4 h-4 text-red-400"
+              className="w-4 h-4 text-white"
             >
               <path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.045 9.72c.122-.163.266-.317.429-.46 1.326-1.163 3.525-.262 3.525 1.604v7.288c0 1.866-2.199 2.768-3.525 1.604-.37-.325-.664-.714-.871-1.144L5.226 2.296A3.002 3.002 0 017.5 2h9.75a3 3 0 013.001 3v2.855l1.794 1.865z" />
               <path d="M12.006 13.918l-3.32-3.453a2.978 2.978 0 00-.916-2.227 3.003 3.003 0 00-2.32-.835L2.3 8.599a3 3 0 00-.8 2.15V15.5a3 3 0 003 3h10.999a3 3 0 00.932-.15l-4.425-4.432z" />
@@ -480,14 +480,14 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
             e.stopPropagation();
             setIsSettingsOpen(true);
           }}
-          className="bg-gray-950/70 hover:bg-blue-900/70 backdrop-blur-md p-2 rounded-lg text-blue-300 transition-all border border-blue-800/40"
+          className="bg-gray-950/70 hover:bg-blue-900/70 backdrop-blur-md p-2 rounded-lg text-white transition-all border border-blue-800/40"
           title="Settings"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 15 15"
             fill="currentColor"
-            className="w-4 h-4"
+            className="w-4 h-4 text-white"
           >
             <path
               fillRule="evenodd"
@@ -502,18 +502,14 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
             e.stopPropagation();
             setIsConnectionOpen(true);
           }}
-          className={`bg-gray-950/70 hover:bg-blue-900/70 backdrop-blur-md p-2 rounded-lg transition-all border ${
-            connectionStatus === "connected"
-              ? "text-cyan-400 border-cyan-500/50"
-              : "text-blue-300 border-blue-800/40"
-          }`}
+          className="bg-gray-950/70 hover:bg-blue-900/70 backdrop-blur-md p-2 rounded-lg text-white transition-all border border-blue-800/40"
           title="Multiplayer"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
-            className="w-4 h-4"
+            className="w-4 h-4 text-white"
           >
             <rect
               x="9"
@@ -571,18 +567,18 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
         </button>
       </div>
 
-  
+      {/* ARM SYSTEM button moved under control buttons */}
       {isCameraEnabled && (
-        <div className="absolute bottom-3 left-0 w-full flex justify-center pointer-events-auto">
+        <div className="absolute top-16 left-3 z-30 pointer-events-auto">
           {appState === AppState.IDLE || appState === AppState.FINISHED ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onArm();
               }}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2 px-6 rounded-full text-[11px] tracking-wider border border-blue-400/30 shadow-lg shadow-blue-900/30 transition-all transform active:scale-95"
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-2 px-4 rounded-full text-[10px] tracking-wider border border-blue-400/30 shadow-lg shadow-blue-900/30 transition-all transform active:scale-95"
             >
-              ▶ ARM SYSTEM
+              ▶ ARM
             </button>
           ) : (
             <button
@@ -591,7 +587,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
                 onReset();
               }}
               disabled={appState === AppState.CALIBRATING}
-              className={`font-bold py-2 px-6 rounded-full text-[11px] tracking-wider border transition-all transform active:scale-95 shadow-lg
+              className={`font-bold py-2 px-4 rounded-full text-[10px] tracking-wider border transition-all transform active:scale-95 shadow-lg
                 ${
                   appState === AppState.CALIBRATING
                     ? "bg-amber-600/80 text-white/80 cursor-wait border border-amber-500/30 shadow-amber-900/30"
@@ -599,7 +595,7 @@ export const BarrierCam: React.FC<BarrierCamProps> = ({
                 }`}
             >
               {appState === AppState.CALIBRATING
-                ? "◉ CALIBRATING..."
+                ? "◉ CALIB..."
                 : appState === AppState.ARMED
                 ? "✕ CANCEL"
                 : "↺ RESET"}

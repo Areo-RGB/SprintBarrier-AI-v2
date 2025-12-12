@@ -69,7 +69,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-blue-500/40 rounded-br-lg"></div>
 
       <div
-        className={`font-bold tracking-tighter tabular-nums ${getStatusColor()} transition-all duration-300 z-10 flex items-baseline`}
+        className={`font-bold tracking-tighter tabular-nums ${getStatusColor()} transition-all duration-300 z-10 flex items-baseline p-4`}
       >
         <span className="text-5xl md:text-7xl font-[Inter]">
           {mm}:{ss}

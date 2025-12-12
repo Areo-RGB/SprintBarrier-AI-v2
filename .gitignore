@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 /.serena
+/nul
+run_drive_analysis.py
+test_drive_analyzer.py
+README_DRIVE_ANALYZER.md

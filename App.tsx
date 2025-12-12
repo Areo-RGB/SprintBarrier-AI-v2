@@ -555,7 +555,7 @@ const App: React.FC = () => {
       <header className="mb-4 flex justify-between items-center border-b border-blue-900/50 pb-3 shrink-0">
         <div>
           <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            SPRINT<span className="text-blue-300/80 font-medium">BARRIER</span>
+            SPRINT<span className="text-blue-300/80 font-medium">GATES</span>
           </h1>
           <p className="text-[10px] text-blue-500/60 tracking-widest">
             OPTICAL TIMING
@@ -569,30 +569,6 @@ const App: React.FC = () => {
             >
               {showDebug ? "HIDE" : "LOG"}
             </button>
-            <div className="text-[10px] text-blue-600/60">v2.3</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ring-offset-gray-950 ${
-                connectionStatus === "connected"
-                  ? "bg-cyan-400 ring-cyan-400/50"
-                  : connectionStatus === "waiting"
-                  ? "bg-amber-400 ring-amber-400/50 animate-pulse"
-                  : "bg-blue-700 ring-blue-700/50"
-              }`}
-            ></div>
-            <div className="flex flex-col items-end">
-              <div className="text-[10px] font-semibold text-cyan-400">
-                {connectionStatus === "connected"
-                  ? "LINKED"
-                  : connectionStatus === "waiting"
-                  ? "WAITING"
-                  : "LOCAL"}
-              </div>
-              <div className="text-[9px] text-blue-500/50">
-                {myDeviceName}
-              </div>
-            </div>
           </div>
         </div>
       </header>
